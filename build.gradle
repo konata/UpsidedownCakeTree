@@ -1,0 +1,115 @@
+import java.nio.file.Files
+import java.nio.file.Paths
+
+plugins {
+    id 'java'
+}
+
+group = 'org.example'
+version = '1.0-SNAPSHOT'
+def platformVersion = 34
+
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        def src = Files.list(Paths.get("${project.rootDir}/externals")).filter { Files.isDirectory(it) }.toArray()
+        java.srcDirs = src.toList()
+    }
+}
+
+dependencies {
+    implementation files("${System.getenv("ANDROID_HOME")}/platforms/android-${platformVersion}/android.jar")
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task link() {
+    doLast {
+        def base = ["apex/jobscheduler/framework",
+                    "apex/jobscheduler/service",
+                    "core",
+                    "drm",
+                    "graphics",
+                    "identity",
+                    "keystore",
+                    "location",
+                    "media",
+                    "media/lib/remotedisplay",
+                    "media/lib/signer",
+                    "media/lib/tvremote",
+                    "media/mca/effect",
+                    "media/mca/filterfw",
+                    "media/mca/filterpacks",
+                    "mms",
+                    "nfc-extras",
+                    "omapi",
+                    "services/accessibility",
+                    "services/appprediction",
+                    "services/appwidget",
+                    "services/autofill",
+                    "services/backup/",
+                    "services/companion",
+                    "services/contentcapture",
+                    "services/contentsuggestions",
+                    "services/core",
+                    "services/coverage",
+                    "services/devicepolicy",
+                    "services",
+                    "services/midi",
+                    "services/musicrecognition",
+                    "services/net",
+                    "services/people",
+                    "services/print",
+                    "services/restrictions",
+                    "services/searchui",
+                    "services/selectiontoolbar",
+                    "services/smartspace",
+                    "services/systemcaptions",
+                    "services/texttospeech",
+                    "services/translation",
+                    "services/usage",
+                    "services/usb",
+                    "services/voiceinteraction",
+                    "services/wallpapereffectsgeneration",
+                    "services/wifi",
+                    "services/credentials",
+                    "telecomm",
+                    "telephony",
+                    "wifi", // wifi/java/src ???
+        ]
+
+        base.collect { [it, it.replaceAll(/[.\/]+/, "@").replaceAll(/^@|@$/, "")] }.forEach { pair ->
+            def to = Paths.get("${project.rootDir}/externals/${pair[1]}").toAbsolutePath()
+            def from = Paths.get("${project.rootDir}/../base/${pair[0]}/java").toAbsolutePath()
+            println("from: ${from} to:${to}")
+            try {
+                Files.createSymbolicLink(to, from)
+            } catch (e) {
+                println("symbolicLink: $e")
+            }
+        }
+
+        def health = (["service/java",
+                       "apk/src",
+                       "framework/java"])
+
+        health.collect { [it, it.replaceAll(/[.\/]+/, "@").replaceAll(/^@|@$/, "")] }.forEach { pair ->
+            def to = Paths.get("${project.rootDir}/externals/HealthFitness@${pair[1]}").toAbsolutePath()
+            def from = Paths.get("${project.rootDir}/../HealthFitness/${pair[0]}").toAbsolutePath()
+            println("from: ${from} to:${to}")
+            try {
+                Files.createSymbolicLink(to, from)
+            } catch (e) {
+                println("symboliclink: $e")
+            }
+        }
+    }
+}
