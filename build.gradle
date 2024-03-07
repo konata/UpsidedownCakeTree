@@ -33,74 +33,79 @@ test {
 
 task link() {
     doLast {
-        def base = ["apex/jobscheduler/framework",
-                    "apex/jobscheduler/service",
-                    "core",
-                    "drm",
-                    "graphics",
-                    "identity",
-                    "keystore",
-                    "location",
-                    "media",
-                    "media/lib/remotedisplay",
-                    "media/lib/signer",
-                    "media/lib/tvremote",
-                    "media/mca/effect",
-                    "media/mca/filterfw",
-                    "media/mca/filterpacks",
-                    "mms",
-                    "nfc-extras",
-                    "omapi",
-                    "services/accessibility",
-                    "services/appprediction",
-                    "services/appwidget",
-                    "services/autofill",
-                    "services/backup/",
-                    "services/companion",
-                    "services/contentcapture",
-                    "services/contentsuggestions",
-                    "services/core",
-                    "services/coverage",
-                    "services/devicepolicy",
-                    "services",
-                    "services/midi",
-                    "services/musicrecognition",
-                    "services/net",
-                    "services/people",
-                    "services/print",
-                    "services/restrictions",
-                    "services/searchui",
-                    "services/selectiontoolbar",
-                    "services/smartspace",
-                    "services/systemcaptions",
-                    "services/texttospeech",
-                    "services/translation",
-                    "services/usage",
-                    "services/usb",
-                    "services/voiceinteraction",
-                    "services/wallpapereffectsgeneration",
-                    "services/wifi",
-                    "services/credentials",
-                    "telecomm",
-                    "telephony",
-                    "wifi", // wifi/java/src ???
+        def base = [
+                java: ["apex/jobscheduler/framework",
+                       "apex/jobscheduler/service",
+                       "core",
+                       "drm",
+                       "graphics",
+                       "identity",
+                       "keystore",
+                       "location",
+                       "media",
+                       "media/lib/remotedisplay",
+                       "media/lib/signer",
+                       "media/lib/tvremote",
+                       "media/mca/effect",
+                       "media/mca/filterfw",
+                       "media/mca/filterpacks",
+                       "mms",
+                       "nfc-extras",
+                       "omapi",
+                       "services/accessibility",
+                       "services/appprediction",
+                       "services/appwidget",
+                       "services/autofill",
+                       "services/backup/",
+                       "services/companion",
+                       "services/contentcapture",
+                       "services/contentsuggestions",
+                       "services/core",
+                       "services/coverage",
+                       "services/devicepolicy",
+                       "services",
+                       "services/midi",
+                       "services/musicrecognition",
+                       "services/net",
+                       "services/people",
+                       "services/print",
+                       "services/restrictions",
+                       "services/searchui",
+                       "services/selectiontoolbar",
+                       "services/smartspace",
+                       "services/systemcaptions",
+                       "services/texttospeech",
+                       "services/translation",
+                       "services/usage",
+                       "services/usb",
+                       "services/voiceinteraction",
+                       "services/wallpapereffectsgeneration",
+                       "services/wifi",
+                       "services/credentials",
+                       "telecomm",
+                       "telephony",
+                ],
+                src : [
+                        "libs/WindowManager/Jetpack",
+                        "libs/WindowManager/Shell",
+                        "wifi/java"
+                ]
         ]
 
-        base.collect { [it, it.replaceAll(/[.\/]+/, "@").replaceAll(/^@|@$/, "")] }.forEach { pair ->
-            def to = Paths.get("${project.rootDir}/externals/${pair[1]}").toAbsolutePath()
-            def from = Paths.get("${project.rootDir}/../base/${pair[0]}/java").toAbsolutePath()
-            println("from: ${from} to:${to}")
-            try {
-                Files.createSymbolicLink(to, from)
-            } catch (e) {
-                println("symbolicLink: $e")
+        base.collect { key, value ->
+            value.collect { [it, it.replaceAll(/[.\/]+/, "@").replaceAll(/^@|@$/, "")] }.forEach { pair ->
+                def to = Paths.get("${project.rootDir}/externals/${pair[1]}").toAbsolutePath()
+                def from = Paths.get("${project.rootDir}/../base/${pair[0]}/${key}").toAbsolutePath()
+                println("from: ${from} to:${to}")
+                try {
+                    Files.createSymbolicLink(to, from)
+                } catch (e) {
+                    println("symbolicLink: $e")
+                }
             }
         }
 
-        def health = (["service/java",
-                       "apk/src",
-                       "framework/java"])
-
+        def health = (["service/java", "apk/src", "framework/java"])
         health.collect { [it, it.replaceAll(/[.\/]+/, "@").replaceAll(/^@|@$/, "")] }.forEach { pair ->
             def to = Paths.get("${project.rootDir}/externals/HealthFitness@${pair[1]}").toAbsolutePath()
             def from = Paths.get("${project.rootDir}/../HealthFitness/${pair[0]}").toAbsolutePath()
