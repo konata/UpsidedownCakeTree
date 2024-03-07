@@ -22,6 +22,7 @@ sourceSets {
 }
 
 dependencies {
+    implementation files("libs/bluetooth.jar")
     implementation files("${System.getenv("ANDROID_HOME")}/platforms/android-${platformVersion}/android.jar")
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -112,6 +113,22 @@ task link() {
             println("from: ${from} to:${to}")
             try {
                 Files.createSymbolicLink(to, from)
+            } catch (e) {
+                println("symboliclink: $e")
+            }
+        }
+
+        def bluetooth = [
+                "Bluetooth/framework/java",
+                "Bluetooth/service/src",
+                "Bluetooth/android/app/src"
+        ].collect { symbol ->
+            [symbol, new File("${project.rootDir}/../$symbol"), new File("${project.rootDir}/externals/${symbol.replaceAll("/", "@")}")]
+        }
+
+        bluetooth.forEach {
+            try {
+                Files.createSymbolicLink(it[2].toPath(), it[1].toPath())
             } catch (e) {
                 println("symboliclink: $e")
             }
