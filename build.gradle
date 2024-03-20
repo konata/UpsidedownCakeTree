@@ -22,7 +22,7 @@ sourceSets {
 }
 
 dependencies {
-    implementation files("libs/bluetooth.jar")
+    implementation files("libs/*.jar")
     implementation files("${System.getenv("ANDROID_HOME")}/platforms/android-${platformVersion}/android.jar")
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
@@ -34,64 +34,59 @@ test {
 
 task link() {
     doLast {
-        def base = [
-                java: ["apex/jobscheduler/framework",
-                       "apex/jobscheduler/service",
-                       "core",
-                       "drm",
-                       "graphics",
-                       "identity",
-                       "keystore",
-                       "location",
-                       "media",
-                       "media/lib/remotedisplay",
-                       "media/lib/signer",
-                       "media/lib/tvremote",
-                       "media/mca/effect",
-                       "media/mca/filterfw",
-                       "media/mca/filterpacks",
-                       "mms",
-                       "nfc-extras",
-                       "omapi",
-                       "services/accessibility",
-                       "services/appprediction",
-                       "services/appwidget",
-                       "services/autofill",
-                       "services/backup/",
-                       "services/companion",
-                       "services/contentcapture",
-                       "services/contentsuggestions",
-                       "services/core",
-                       "services/coverage",
-                       "services/devicepolicy",
-                       "services",
-                       "services/midi",
-                       "services/musicrecognition",
-                       "services/net",
-                       "services/people",
-                       "services/print",
-                       "services/restrictions",
-                       "services/searchui",
-                       "services/selectiontoolbar",
-                       "services/smartspace",
-                       "services/systemcaptions",
-                       "services/texttospeech",
-                       "services/translation",
-                       "services/usage",
-                       "services/usb",
-                       "services/voiceinteraction",
-                       "services/wallpapereffectsgeneration",
-                       "services/wifi",
-                       "services/credentials",
-                       "telecomm",
-                       "telephony",
-                ],
-                src : [
-                        "libs/WindowManager/Jetpack",
-                        "libs/WindowManager/Shell",
-                        "wifi/java"
-                ]
-        ]
+        def base = [java: ["apex/jobscheduler/framework",
+                           "apex/jobscheduler/service",
+                           "core",
+                           "drm",
+                           "graphics",
+                           "identity",
+                           "keystore",
+                           "location",
+                           "media",
+                           "media/lib/remotedisplay",
+                           "media/lib/signer",
+                           "media/lib/tvremote",
+                           "media/mca/effect",
+                           "media/mca/filterfw",
+                           "media/mca/filterpacks",
+                           "mms",
+                           "nfc-extras",
+                           "omapi",
+                           "services/accessibility",
+                           "services/appprediction",
+                           "services/appwidget",
+                           "services/autofill",
+                           "services/backup/",
+                           "services/companion",
+                           "services/contentcapture",
+                           "services/contentsuggestions",
+                           "services/core",
+                           "services/coverage",
+                           "services/devicepolicy",
+                           "services",
+                           "services/midi",
+                           "services/musicrecognition",
+                           "services/net",
+                           "services/people",
+                           "services/print",
+                           "services/restrictions",
+                           "services/searchui",
+                           "services/selectiontoolbar",
+                           "services/smartspace",
+                           "services/systemcaptions",
+                           "services/texttospeech",
+                           "services/translation",
+                           "services/usage",
+                           "services/usb",
+                           "services/voiceinteraction",
+                           "services/wallpapereffectsgeneration",
+                           "services/wifi",
+                           "services/credentials",
+                           "telecomm",
+                           "telephony",],
+                    src : ["libs/WindowManager/Jetpack",
+                           "libs/WindowManager/Shell",
+                           "wifi/java"]]
 
         base.collect { key, value ->
             value.collect { [it, it.replaceAll(/[.\/]+/, "@").replaceAll(/^@|@$/, "")] }.forEach { pair ->
@@ -106,32 +101,42 @@ task link() {
             }
         }
 
-        def health = (["service/java", "apk/src", "framework/java"])
-        health.collect { [it, it.replaceAll(/[.\/]+/, "@").replaceAll(/^@|@$/, "")] }.forEach { pair ->
-            def to = Paths.get("${project.rootDir}/externals/HealthFitness@${pair[1]}").toAbsolutePath()
-            def from = Paths.get("${project.rootDir}/../HealthFitness/${pair[0]}").toAbsolutePath()
-            println("from: ${from} to:${to}")
-            try {
-                Files.createSymbolicLink(to, from)
-            } catch (e) {
-                println("symboliclink: $e")
+        // specify dirs contains direct java source code for mainline module
+        def barebone = { dirs ->
+            def moduleName = dirs.first().split("/").first()
+            if (!new File("${project.rootDir}/../$moduleName").exists()) {
+                println("module: ${moduleName} not synced, skip ${dirs}")
+            } else {
+                dirs.collect { dir -> [new File("${project.rootDir}/../$dir"), new File("${project.rootDir}/externals/${dir.replaceAll("/", "@")}")] }.forEach {
+                    try {
+                        def (src, dst) = it.collect(File::toPath)
+                        if (Files.isDirectory(src)) {
+                            Files.createSymbolicLink(dst, src)
+                        } else {
+                            println("missing dir: ${src}")
+                        }
+                    } catch (e) {
+                        println("symlink: $e")
+                    }
+                }
             }
         }
 
-        def bluetooth = [
-                "Bluetooth/framework/java",
-                "Bluetooth/service/src",
-                "Bluetooth/android/app/src"
-        ].collect { symbol ->
-            [symbol, new File("${project.rootDir}/../$symbol"), new File("${project.rootDir}/externals/${symbol.replaceAll("/", "@")}")]
-        }
+        // bluetooth stack
+        barebone(["Bluetooth/framework/java",
+                  "Bluetooth/service/java", // Tiramisu
+                  "Bluetooth/service/src", // UpsideDownCake
+                  "Bluetooth/android/app/src"])
 
-        bluetooth.forEach {
-            try {
-                Files.createSymbolicLink(it[2].toPath(), it[1].toPath())
-            } catch (e) {
-                println("symboliclink: $e")
-            }
-        }
+        // role manager
+        barebone(["Permission/framework-s/java",
+                  "Permission/framework/java",
+                  "Permission/service/java"])
+
+        // HealthFitness (UpsideDownCake only)
+        barebone(["HealthFitness/apk/src",
+                  "HealthFitness/backuprestore/src",
+                  "HealthFitness/framework/java",
+                  "HealthFitness/service/java"])
     }
 }
