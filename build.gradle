@@ -86,6 +86,7 @@ task link() {
                            "telephony",],
                     src : ["libs/WindowManager/Jetpack",
                            "libs/WindowManager/Shell",
+                           "packages/CompanionDeviceManager",
                            "wifi/java"]]
 
         base.collect { key, value ->
